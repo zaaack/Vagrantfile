@@ -4,24 +4,43 @@
 # config.vm.provision :shell, path: "bootstrap.sh"
 
 # change source mirror
+
 cd /etc/apt/
-mv sources.list sources.list.bak
-bash -c "cat /vagrant/sources.list.mirror sources.list.bak > sources.list"
-apt-get update -y
-apt-get upgrade -y
+if [[ ! -f sources.list.bak ]]; then
+  mv sources.list sources.list.bak
+  bash -c "cat /vagrant/sources.list.mirror sources.list.bak > sources.list"
+  echo "add aliyun mirror to source.list"
+  apt-get update -y
+  sudo apt-get install curl -y
+fi
 
 # install build tools
-apt-get install -y make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev
+apt-fast install -y make build-essential libsnappy-dev zlib1g-dev libbz2-dev libgflags-dev libsqlite3-dev gcc g++
 
-# install nginx & git
-apt-get install -y nginx git
+# install user tools
+apt-fast install -y git zsh wget nethogs htop vim proxychains
+curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh | sh
+echo 'alias vi=vim' >> ~/.zshrc
 
-# install pyenv
-curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash
-echo 'export PATH="/home/vagrant/.pyenv/bin:$PATH"' >> ~/.bash_profile
-echo 'eval "$(pyenv init -)"' >> ~/.bash_profile
-echo 'eval "$(pyenv virtualenv-init -)"' >> ~/.bash_profile
-source ~/.bash_profile
+MEOW_INSTALLDIR=/usr/local/bin
+cd /usr/local/bin
+curl -L git.io/meowproxy | bash
+mv /usr/local/bin/MEOW /usr/local/bin/meow
 
-# install python
-pyenv install 3.5.1
+# install nodejs
+curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
+sudo apt-fast install -y nodejs
+
+# install nginx, mongodb
+apt-fast install -y nginx mongodb
+
+# install yarn
+curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources
+echo 'export PATH="$PATH:`yarn global bin`"' >> ~/.zshrc
+
+# node tools
+yarn global add http-server n
+
+
+# install rocksdb
